@@ -1,1 +1,3 @@
-$hello = "ross";
+$hello="ross";
+
+$number=1;

@@ -15,6 +15,7 @@ enum token_type {
 	token_notfound,
 	token_variable,
 	token_value,
+	token_string,
 	token_assignment,
 	token_end
 };
@@ -34,7 +35,7 @@ int is_variable(char *tok) {
 	}
 
 	// A variable must end with either a space ; or )
-	if (tok[len - 1] != *" " && tok[len - 1] != *";" && tok[len-1] != *")" && tok[len-1] != *",") {
+	if (tok[len - 1] != *" " && tok[len - 1] != *";" && tok[len-1] != *")" && tok[len-1] != *"," && tok[len-1] != *"=") {
 		printf("Variable does not end with either space ; ) ,)\n");
 		return 0;
 	}
@@ -56,6 +57,25 @@ int is_variable(char *tok) {
 	return 1;
 }
 
+int is_string(char *tok) {
+
+	int len = strlen(tok);
+
+	if (tok[0] != *"\"") {
+		return 0;
+	}
+
+	if (len-1 == 0) {
+		return 0;
+	}
+
+	if (tok[len-1] != *"\"") {
+		return 0;
+	}
+
+	return 1;
+}
+
 enum token_type parse_token(char *tok, char ch) {
 	int len = strlen(tok);
 	char* newstr = malloc((len * sizeof(char)) + sizeof(char));
@@ -66,13 +86,17 @@ enum token_type parse_token(char *tok, char ch) {
 	
 	newstr[len] = ch;	
 	strcpy(tok, newstr);
-	
+
 	if (is_variable(tok) == 1) {
 		return token_variable;
 	}
 	
 	if (strcmp(tok, "=") == 0) {
 		return token_assignment;
+	}
+
+	if (is_string(tok) == 1) {
+		return token_string;
 	}
 
 	if (strcmp(tok, ";") == 0) {
@@ -84,7 +108,9 @@ enum token_type parse_token(char *tok, char ch) {
 }
 
 struct node {
+	char * token;
 	enum token_type type;
+	struct node * previous;
 	struct node * next;
 };
 
@@ -96,10 +122,25 @@ void token_type_debug(enum token_type tt) {
 	case token_assignment:
 		printf("assignment found\n");
 		break;
+	case token_string:
+		printf("string found\n");
+		break;
 	case token_end:
 		printf("end found\n");
 		break;
 	}
+}
+int is_token_position_valid(struct node* previous, enum token_type tt) {
+		
+	if (tt == token_assignment && previous->type != token_variable) {
+
+		//printf("previous type: %d\n", previous->type);
+		printf("Can only make an assignment to a variable\n");
+		return 0;
+	}
+
+	return 1;
+
 }
 
 int main(int argc, char* argv) {
@@ -109,26 +150,61 @@ int main(int argc, char* argv) {
 	char ch;
 
 	char* text = malloc(sizeof(char*));
-	struct node * n = malloc(sizeof(struct node *));
-	struct node * base_node = n;
+	struct node * n = malloc(sizeof(struct node));
+	struct node * next;
+	struct node * previous = malloc(sizeof(struct node));
+
 	char * tok;
+	char give_back_char;
+	int give_back;
+
 	do {
 
-		ch = fgetc(fp);
-			
+		if (give_back != 1) {
+
+			ch = fgetc(fp);
+		} else {
+			ch = give_back_char;
+		}
+
 		enum token_response res;
 		if (tok == NULL) {
-			tok = malloc(sizeof(char *));
+			tok = malloc(sizeof(char));
+		}
+
+		if (ch == *"\n") {
+			continue;
 		}
 
 		res = parse_token(tok, ch);
 		
-		token_type_debug(res);	
+		token_type_debug(res);
+
+		give_back = 0;
 		
-		if (res != token_notfound) {
-			n->next = malloc(sizeof(struct node *));
-			n = n->next;
-			tok = malloc(sizeof(char *));
+		if (res != token_notfound) {	
+			
+			
+
+			if (res != token_string && strlen(tok) > 1) {
+				give_back = 1;
+				give_back_char = ch;
+			}
+
+			if (is_token_position_valid(previous, res) != 1) {
+				printf("Invalid syntax");
+				break;	
+			}
+
+			n->token = tok;
+
+			n->type = res;
+			
+			next = malloc(sizeof(struct node));
+			tok = malloc(sizeof(char));
+
+			*previous = *n;
+			*n = *next;
 		}
 	} while (ch != EOF);
 }
