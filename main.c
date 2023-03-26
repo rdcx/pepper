@@ -35,17 +35,20 @@ int is_variable(char *tok) {
 
 	// A variable must end with either a space ; or )
 	if (tok[len - 1] != *" " && tok[len - 1] != *";" && tok[len-1] != *")" && tok[len-1] != *",") {
+		printf("Variable does not end with either space ; ) ,)\n");
 		return 0;
 	}
 
 	// First variable name character must be alpha
 	if (!isalpha(tok[1])) {
+		printf("First character is not alpha\n");
 		return 0;
 	}
 
 	// all characters following must be alphanum
-	for (int i = 1; i < len; i++) {
+	for (int i = 1; i < len - 1; i++) {
 		if (!isalnum(tok[i])) {
+			printf("All variable name chars are not alpha numeric\n");
 			return 0;
 		}
 	}
@@ -62,7 +65,7 @@ enum token_type parse_token(char *tok, char ch) {
 	}
 	
 	newstr[len] = ch;	
-	strcpy(tok, newstr)
+	strcpy(tok, newstr);
 	
 	if (is_variable(tok) == 1) {
 		return token_variable;
