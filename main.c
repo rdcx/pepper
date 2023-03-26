@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
+#define DEBUG 0
+#define DEBUG_PRINT(x) do { if (DEBUG) { printf("\n%s\n", x); } }
 
 enum token_response {
 	found,
@@ -15,11 +19,41 @@ enum token_type {
 	token_end
 };
 
+int is_variable(char *tok) {
+	
+	int len = strlen(tok);
+
+	// A variable must be a minimum of 1 character after the $
+	if (len < 2) {
+		return 0;
+	}
+
+	// A variable must start with $
+	if (tok[0] != *"$") {
+		return 0;
+	}
+
+	// A variable must end with either a space ; or )
+	if (tok[len - 1] != *" " && tok[len - 1] != *";" && tok[len-1] != *")" && tok[len-1] != *",") {
+		return 0;
+	}
+
+	// First variable name character must be alpha
+	if (!isalpha(tok[1])) {
+		return 0;
+	}
+
+	// all characters following must be alphanum
+	for (int i = 1; i < len; i++) {
+		if (!isalnum(tok[i])) {
+			return 0;
+		}
+	}
+
+	return 1;
+}
 
 enum token_type parse_token(char *tok, char ch) {
-	if (tok == NULL) {
-		tok = malloc(sizeof(char *));
-	}
 	int len = strlen(tok);
 	char* newstr = malloc((len * sizeof(char)) + sizeof(char));
 		
@@ -28,7 +62,11 @@ enum token_type parse_token(char *tok, char ch) {
 	}
 	
 	newstr[len] = ch;	
-	tok = newstr;
+	strcpy(tok, newstr)
+	
+	if (is_variable(tok) == 1) {
+		return token_variable;
+	}
 	
 	if (strcmp(tok, "=") == 0) {
 		return token_assignment;
@@ -36,10 +74,6 @@ enum token_type parse_token(char *tok, char ch) {
 
 	if (strcmp(tok, ";") == 0) {
 		return token_end;	
-	}
-
-	if (strcmp(tok, "$") == 0) {
-		return token_variable;
 	}
 
 	printf("NOT FOUND (%s), len (%ld) \n\n", tok, strlen(tok));
@@ -80,6 +114,10 @@ int main(int argc, char* argv) {
 		ch = fgetc(fp);
 			
 		enum token_response res;
+		if (tok == NULL) {
+			tok = malloc(sizeof(char *));
+		}
+
 		res = parse_token(tok, ch);
 		
 		token_type_debug(res);	
