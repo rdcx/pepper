@@ -16,6 +16,7 @@ enum token_type {
 	token_variable,
 	token_value,
 	token_string,
+	token_integer,
 	token_assignment,
 	token_end
 };
@@ -76,6 +77,18 @@ int is_string(char *tok) {
 	return 1;
 }
 
+int is_integer(char *tok) {
+	int len = strlen(tok);
+	
+	for (int i = 0; i < len; i++) {
+		if (isdigit(tok[i]) == 0) {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 enum token_type parse_token(char *tok, char ch) {
 	int len = strlen(tok);
 	char* newstr = malloc((len * sizeof(char)) + sizeof(char));
@@ -89,6 +102,10 @@ enum token_type parse_token(char *tok, char ch) {
 
 	if (is_variable(tok) == 1) {
 		return token_variable;
+	}
+
+	if (is_integer(tok) == 1) {
+		return token_integer;
 	}
 	
 	if (strcmp(tok, "=") == 0) {
@@ -125,13 +142,15 @@ void token_type_debug(enum token_type tt) {
 	case token_string:
 		printf("string found\n");
 		break;
+	case token_integer:
+		printf("integer found\n");
+		break;
 	case token_end:
 		printf("end found\n");
 		break;
 	}
 }
-int is_token_position_valid(struct node* previous, enum token_type tt) {
-		
+int is_token_position_valid(struct node* previous, enum token_type tt) {	
 	if (tt == token_assignment && previous->type != token_variable) {
 
 		//printf("previous type: %d\n", previous->type);
@@ -159,7 +178,7 @@ int main(int argc, char* argv) {
 	int give_back;
 
 	do {
-
+		
 		if (give_back != 1) {
 
 			ch = fgetc(fp);
@@ -182,9 +201,7 @@ int main(int argc, char* argv) {
 
 		give_back = 0;
 		
-		if (res != token_notfound) {	
-			
-			
+		if (res != token_notfound) {		
 
 			if (res != token_string && strlen(tok) > 1) {
 				give_back = 1;
@@ -194,6 +211,10 @@ int main(int argc, char* argv) {
 			if (is_token_position_valid(previous, res) != 1) {
 				printf("Invalid syntax");
 				break;	
+			}
+
+			if (res == token_integer && previous->type == token_integer) {
+			//	merge_nodes(n, previous);
 			}
 
 			n->token = tok;
