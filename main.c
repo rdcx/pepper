@@ -92,12 +92,11 @@ int is_integer(char *tok) {
 enum token_type parse_token(char *tok, char ch) {
 	int len = strlen(tok);
 	char* newstr = malloc((len * sizeof(char)) + sizeof(char));
-		
 	for (int i = 0; i < len; i++) {
 		newstr[i] = tok[i];
 	}
-	
-	newstr[len] = ch;	
+
+	newstr[len] = ch;
 	strcpy(tok, newstr);
 
 	if (is_variable(tok) == 1) {
@@ -168,29 +167,23 @@ int main(int argc, char* argv) {
 	
 	char ch;
 
-	char* text = malloc(sizeof(char*));
-	struct node * n = malloc(sizeof(struct node));
-	struct node * next;
-	struct node * previous = malloc(sizeof(struct node));
+	struct node *n = malloc(sizeof(struct node));
 
-	char * tok;
+	char * tok = malloc(sizeof(char));
 	char give_back_char;
 	int give_back;
-
+	int pos = 0;
 	do {
-		
+		pos++;
 		if (give_back != 1) {
 
 			ch = fgetc(fp);
 		} else {
 			ch = give_back_char;
 		}
-
+		
 		enum token_response res;
-		if (tok == NULL) {
-			tok = malloc(sizeof(char));
-		}
-
+	
 		if (ch == *"\n") {
 			continue;
 		}
@@ -207,13 +200,13 @@ int main(int argc, char* argv) {
 				give_back = 1;
 				give_back_char = ch;
 			}
-
-			if (is_token_position_valid(previous, res) != 1) {
-				printf("Invalid syntax");
-				break;	
+			if (n->previous != NULL) {
+				if (is_token_position_valid(n->previous, res) != 1) {
+					printf("Invalid syntax");
+					break;	
+				}
 			}
-
-			if (res == token_integer && previous->type == token_integer) {
+			if (res == token_integer && n->previous->type == token_integer) {
 			//	merge_nodes(n, previous);
 			}
 
@@ -221,11 +214,11 @@ int main(int argc, char* argv) {
 
 			n->type = res;
 			
-			next = malloc(sizeof(struct node));
+			n->next = malloc(sizeof(struct node));
 			tok = malloc(sizeof(char));
-
-			*previous = *n;
-			*n = *next;
+			n->previous = malloc(sizeof(struct node));
+			n->previous = n;
+			n = n->next;
 		}
 	} while (ch != EOF);
 }
